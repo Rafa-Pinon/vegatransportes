@@ -1,0 +1,185 @@
+/* Contenedor principal */
+.factura-container {
+    padding: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Título */
+  h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  
+  /* Estilo para los inputs y selects */
+  .factura-input {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .factura-input label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #555;
+  }
+  
+  .factura-input input,
+  .factura-input select {
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+    transition: border 0.3s ease;
+  }
+  
+  .factura-input input:focus,
+  .factura-input select:focus {
+    border-color: #007bff;
+  }
+  
+  /* Estilo para las secciones de Casetas y Gastos No Contemplados */
+  .factura-section {
+    margin-bottom: 25px;
+  }
+  
+  .factura-section h3 {
+    font-size: 1.5rem;
+    color: #007bff;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+  
+  /* Botón para agregar casetas y gastos no contemplados */
+  button {
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+    width: 100%;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Estilo para las casetas y los gastos no contemplados */
+  .factura-input input[type="number"] {
+    width: 48%;
+    display: inline-block;
+    margin-right: 4%;
+  }
+  
+  .factura-input input[type="text"] {
+    width: 48%;
+    display: inline-block;
+  }
+  
+  /* Contenedor de los botones dentro de las secciones */
+  button.add-more-btn {
+    width: auto;
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 15px;
+    font-size: 1rem;
+    background-color: #28a745;
+    border-radius: 6px;
+    color: white;
+  }
+  
+  button.add-more-btn:hover {
+    background-color: #218838;
+  }
+  
+  /* Estilo del botón para generar el PDF */
+  button.generate-pdf-btn {
+    background-color: #17a2b8;
+    width: 100%;
+    margin-top: 30px;
+  }
+  
+  button.generate-pdf-btn:hover {
+    background-color: #138496;
+  }
+  
+  /* Estilo para el contenedor de los select de conductores y entregadores */
+  .factura-input select {
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+  }
+  
+  /* Estilo para los inputs de texto en el caso de un nuevo conductor */
+  .factura-input input[type="text"] {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: border 0.3s ease;
+  }
+  
+  .factura-input input[type="text"]:focus {
+    border-color: #007bff;
+  }
+  
+  /* Estilo para los botones cuando están inactivos o activados */
+  button:disabled {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
+  }
+  
+  button:disabled:hover {
+    background-color: #e0e0e0;
+  }
+  
+  /* Estilo para el formulario en pantallas pequeñas */
+  @media (max-width: 768px) {
+    .factura-container {
+      padding: 15px;
+    }
+  
+    h1 {
+      font-size: 2rem;
+    }
+  
+    .factura-input input,
+    .factura-input select {
+      font-size: 0.9rem;
+    }
+  
+    button {
+      font-size: 1rem;
+    }
+  
+    .factura-input input[type="number"] {
+      width: 100%;
+      margin-right: 0;
+    }
+  
+    .factura-input input[type="text"] {
+      width: 100%;
+    }
+  
+    .factura-section h3 {
+      font-size: 1.3rem;
+    }
+  }
+  

@@ -1,0 +1,82 @@
+body {
+  background-color: rgb(196, 195, 195);
+}
+.logo {
+  text-align: center;
+  }
+
+.logo img {
+  width: 50%;
+  height: 70%;
+}
+.botones {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  margin-left: 25%;
+  margin-right: 25%;
+}
+.botones button {
+  background-color: rgb(187, 12, 12); /* Azul vibrante */
+  color:white; /* Texto en blanco */
+  font-size: 600%;
+  /* padding: 10px 20px; */
+  border: none;
+  border-radius: 8px; /* Bordes redondeados */
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.botones button:hover {
+  color: black;
+  background-color: rgb(244, 210, 19); /* Azul más oscuro al pasar el mouse */
+  transform: scale(1.05); /* Efecto de agrandamiento */
+}
+
+.botones button:active {
+  background-color: #003f7f; /* Azul aún más oscuro al hacer clic */
+  transform: scale(0.95); /* Efecto de presión */
+}
+
+/* 📱 Modo vertical (portrait) en teléfonos */
+@media screen and (max-width: 480px) and (orientation: portrait) {
+  
+  .logo {
+    margin-top: 30%;
+  }
+  .botones {
+    display: flex;
+    justify-content: center;
+    margin-top: 15%;
+   
+
+    
+  }
+  .logo img {
+    width: 100%; /* Ajuste para pantallas pequeñas */
+    height: 150%;
+  
+  }
+
+  .botones button {
+    font-size: 300%; /* Reducimos el tamaño del texto */
+    padding: 20px 16px; /* Ajustamos el padding */
+  }
+}
+
+/* 📱 Modo horizontal (landscape) en teléfonos */
+@media screen and (max-width: 820px) and (orientation: landscape) {
+  .logo img {
+    width: 60%;
+    height: auto;
+  }
+
+  .botones {
+    flex-direction: row; /* Aseguramos que los botones queden en línea */
+  }
+
+  .botones button {
+    font-size: 350%; /* Ajuste para pantallas anchas */
+    padding: 12px 24px;
+  }
+}
