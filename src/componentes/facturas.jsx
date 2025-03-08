@@ -26,70 +26,53 @@ const Factura = () => {
   const [gastosNoContemplados, setGastosNoContemplados] = useState([
     { concepto: "", monto: 0 },
   ]);
-
-  const handleAddCaseta = () => {
-    setCasetas([...casetas, { nombre: "", total: 0 }]);
-  };
-
-  const handleAddGastoNoContemplado = () => {
-    setGastosNoContemplados([
-      ...gastosNoContemplados,
-      { concepto: "", monto: 0 },
-    ]);
-  };
-
-  const generarPDF = () => {
-    const doc = new jsPDF();
-    doc.text(`Factura de Gasto de Viaje`, 20, 10);
-    doc.text(`Conductor: ${conductor}`, 20, 20);
-    doc.text(`Fecha de Inicio: ${fechaInicio.toLocaleDateString()}`, 20, 30);
-    doc.text(`Origen: ${origen}`, 20, 40);
-    doc.text(`Destino: ${destino}`, 20, 50);
-    doc.text(`Carga: ${carga}`, 20, 60);
-    doc.text(`Kilos: ${kilos}`, 20, 70);
-    doc.text(`Precio por Tonelada: ${precioTonelada}`, 20, 80);
-    doc.text(`Dinero para Gastos: ${dineroGastos}`, 20, 90);
-    doc.text(`Entregador de Gastos: ${entregadorGastos}`, 20, 100);
-
-    let yPosition = 110;
-    casetas.forEach((caseta, index) => {
-      doc.text(
-        `Caseta ${index + 1}: ${caseta.nombre} - ${caseta.total}`,
-        20,
-        yPosition
-      );
-      yPosition += 10;
-    });
-
-    gastosNoContemplados.forEach((gasto, index) => {
-      doc.text(
-        `Gasto No Contemplado ${index + 1}: ${gasto.concepto} - ${gasto.monto}`,
-        20,
-        yPosition
-      );
-      yPosition += 10;
-    });
-
-    const totalCasetas = casetas.reduce((sum, caseta) => sum + caseta.total, 0);
-    const totalGastosNoContemplados = gastosNoContemplados.reduce(
-      (sum, gasto) => sum + gasto.monto,
-      0
-    );
-    const total = totalCasetas + totalGastosNoContemplados;
-
-    doc.text(`Total Casetas: ${totalCasetas}`, 20, yPosition);
-    yPosition += 10;
-    doc.text(
-      `Total Gastos No Contemplados: ${totalGastosNoContemplados}`,
-      20,
-      yPosition
-    );
-    yPosition += 10;
-    doc.text(`Total: ${total}`, 20, yPosition);
-
-    doc.save("Factura_Gasto_Viaje.pdf");
-  };
-
+  // Cargar datos guardados al montar el componente
+  useEffect(() => {
+    const savedData = localStorage.getItem("facturaData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setConductor(parsedData.conductor);
+      setFechaInicio(new Date(parsedData.fechaInicio));
+      setOrigen(parsedData.origen);
+      setDestino(parsedData.destino);
+      setCarga(parsedData.carga);
+      setKilos(parsedData.kilos);
+      setPrecioTonelada(parsedData.precioTonelada);
+      setDineroGastos(parsedData.dineroGastos);
+      setEntregadorGastos(parsedData.entregadorGastos);
+      setCasetas(parsedData.casetas);
+      setGastosNoContemplados(parsedData.gastosNoContemplados);
+    }
+  }, []);
+  // Guardar datos en localStorage cuando cambien
+  useEffect(() => {
+    const facturaData = {
+      conductor,
+      fechaInicio,
+      origen,
+      destino,
+      carga,
+      kilos,
+      precioTonelada,
+      dineroGastos,
+      entregadorGastos,
+      casetas,
+      gastosNoContemplados,
+    };
+    localStorage.setItem("facturaData", JSON.stringify(facturaData));
+  }, [
+    conductor,
+    fechaInicio,
+    origen,
+    destino,
+    carga,
+    kilos,
+    precioTonelada,
+    dineroGastos,
+    entregadorGastos,
+    casetas,
+    gastosNoContemplados,
+  ]);
   const limpiarFormulario = () => {
     if (window.confirm("¿Seguro que quieres limpiar el formulario?")) {
       localStorage.removeItem("facturaData");
@@ -106,6 +89,92 @@ const Factura = () => {
       setGastosNoContemplados([{ concepto: "", monto: 0 }]);
     }
   };
+  const handleAddCaseta = () => {
+    setCasetas([...casetas, { nombre: "", total: 0 }]);
+  };
+
+  const handleRemoveCaseta = (index) => {
+    setCasetas(casetas.filter((_, i) => i !== index));
+  };
+
+  const handleAddGastoNoContemplado = () => {
+    setGastosNoContemplados([
+      ...gastosNoContemplados,
+      { concepto: "", monto: 0 },
+    ]);
+  };
+
+  const handleRemoveGastoNoContemplado = (index) => {
+    setGastosNoContemplados(gastosNoContemplados.filter((_, i) => i !== index));
+  };
+
+  const generarPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 64, 128);
+    doc.setFontSize(18);
+    doc.text("Factura de Gasto de Viaje", 20, 15);
+
+    doc.setFontSize(12);
+    doc.setTextColor(51, 51, 51);
+    doc.setFont("helvetica", "normal");
+
+    doc.text(`Conductor: ${conductor}`, 20, 30);
+    doc.text(`Fecha de Inicio: ${fechaInicio.toLocaleDateString()}`, 20, 40);
+    doc.text(`Origen: ${origen}`, 20, 50);
+    doc.text(`Destino: ${destino}`, 20, 60);
+
+    doc.setTextColor(0, 102, 204);
+    doc.setFontSize(14);
+    doc.text("Casetas:", 20, 75);
+
+    doc.setFontSize(12);
+    doc.setTextColor(51, 51, 51);
+    let yPosition = 85;
+
+    casetas.forEach((caseta, index) => {
+      doc.text(
+        `${index + 1}. ${caseta.nombre} - $${caseta.total}`,
+        25,
+        yPosition
+      );
+      yPosition += 8;
+    });
+    doc.setTextColor(0, 102, 204);
+    doc.setFontSize(14);
+    doc.text("Gastos No Contemplados:", 20, yPosition + 10);
+
+    doc.setFontSize(12);
+    doc.setTextColor(51, 51, 51);
+    yPosition += 20;
+
+    gastosNoContemplados.forEach((gasto, index) => {
+      doc.text(
+        `${index + 1}. ${gasto.concepto} - $${gasto.monto}`,
+        25,
+        yPosition
+      );
+      yPosition += 8;
+    });
+
+    const totalCasetas = casetas.reduce((sum, caseta) => sum + caseta.total, 0);
+    const totalGastosNoContemplados = gastosNoContemplados.reduce(
+      (sum, gasto) => sum + gasto.monto,
+      0
+    );
+    const total = totalCasetas + totalGastosNoContemplados;
+
+    doc.setTextColor(217, 83, 79);
+    doc.setFontSize(14);
+    doc.text(
+      `Total: $${totalCasetas + totalGastosNoContemplados}`,
+      140,
+      yPosition + 15
+    );
+
+    doc.save("Factura_Gasto_Viaje.pdf");
+  };
 
   return (
     <div className="factura-container">
@@ -117,12 +186,13 @@ const Factura = () => {
           value={conductor}
           onChange={(e) => setConductor(e.target.value)}
         >
-          {conductores.map((conductor, index) => (
-            <option key={index} value={conductor}>
-              {conductor}
+          {conductores.map((c, index) => (
+            <option key={index} value={c}>
+              {c}
             </option>
           ))}
         </select>
+
         {conductor === "Nuevo" && (
           <input
             type="text"
@@ -136,7 +206,7 @@ const Factura = () => {
       <div className="factura-input">
         <label>Fecha de Inicio:</label>
         <DatePicker
-          selected={fechaInicio} // Aquí vinculamos la fecha desde el estado
+          selected={fechaInicio}
           onChange={(date) => setFechaInicio(date)}
         />
       </div>
@@ -231,6 +301,7 @@ const Factura = () => {
                 setCasetas(newCasetas);
               }}
             />
+            <button onClick={() => handleRemoveCaseta(index)}>Eliminar</button>
           </div>
         ))}
         <button onClick={handleAddCaseta}>Agregar Caseta</button>
@@ -260,6 +331,9 @@ const Factura = () => {
                 setGastosNoContemplados(newGastos);
               }}
             />
+            <button onClick={() => handleRemoveGastoNoContemplado(index)}>
+              Eliminar
+            </button>
           </div>
         ))}
         <button onClick={handleAddGastoNoContemplado}>
