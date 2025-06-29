@@ -55,6 +55,18 @@ function Factura() {
   const totalCarga =
     Number(datos.toneladas || 0) * Number(datos.precioTonelada || 0);
   const diferencia = Number(datos.viaticos || 0) - totalGastos;
+  const gananciaChoferBase = totalCarga * 0.15;
+  let gananciaChoferFinal = gananciaChoferBase;
+
+  if (diferencia < 0) {
+    // Chofer puso de su bolsa → se le suma
+    gananciaChoferFinal += Math.abs(diferencia);
+  } else {
+    // Le sobraron viáticos → se le descuenta
+    gananciaChoferFinal -= diferencia;
+  }
+
+  const gananciaEmpresa = totalCarga - gananciaChoferFinal - totalGastos;
 
   const generarPDF = async () => {
     const doc = new jsPDF();
@@ -163,16 +175,27 @@ function Factura() {
     doc.setTextColor(0, 0, 0);
     doc.text(`Diferencia con viáticos: $${diferencia}`, margin + 5, y);
     y += 10;
-
-    // Resultado final
+    y += 4;
     doc.setFontSize(12);
-    if (diferencia < 0) {
-      doc.setTextColor(200, 0, 0);
-      doc.text(`A favor del chofer: $${Math.abs(diferencia)}`, margin + 5, y);
-    } else {
-      doc.setTextColor(0, 150, 0);
-      doc.text(`A favor de Vega Transportes: $${diferencia}`, margin + 5, y);
-    }
+    doc.setTextColor(0, 0, 0);
+    doc.text(
+      `Ganancia base chofer (15%): $${gananciaChoferBase.toFixed(2)}`,
+      margin + 5,
+      y
+    );
+    y += 6;
+    doc.text(
+      `Ganancia final chofer (ajustada): $${gananciaChoferFinal.toFixed(2)}`,
+      margin + 5,
+      y
+    );
+    y += 6;
+    doc.setTextColor(0, 0, 0);
+    doc.text(
+      `Ganancia de Vega Transportes: $${gananciaEmpresa.toFixed(2)}`,
+      margin + 5,
+      y
+    );
 
     // Pie de página con logo y texto
     doc.setDrawColor(200);
@@ -336,6 +359,7 @@ function Factura() {
 }
 
 // Subcomponentes
+
 const Input = ({ label, name, value, onChange, type = "text" }) => (
   <div>
     <label>{label}</label>
