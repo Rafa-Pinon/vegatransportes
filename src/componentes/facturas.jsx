@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import jsPDF from "jspdf";
 import { Link } from "react-router-dom";
 import logofactura from "../assets/logosinfondo.png";
-import "./Factura.css";
+import "./factura.css";
 
 function Factura() {
   const [datos, setDatos] = useState({
