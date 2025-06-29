@@ -15,7 +15,7 @@ function Home() {
   return (
     <div className="apptrnsportes">
       <div className="logo">
-        <img src={logo} alt="Mi Logo" />
+        <img src={logo} alt="" />
       </div>
       <div className="botones">
         <button onClick={() => navigate("/factura")}>Factura</button>

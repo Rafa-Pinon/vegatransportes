@@ -1,352 +1,378 @@
-import React, { useState, useEffect } from "react";
-import DatePicker from "react-datepicker";
-import { jsPDF } from "jspdf";
-import "react-datepicker/dist/react-datepicker.css";
-import "./factura.css";
+import React, { useState } from "react";
+import jsPDF from "jspdf";
+import { Link } from "react-router-dom";
+import logofactura from "../assets/logosinfondo.png";
+import "./Factura.css";
 
-const Factura = () => {
-  const conductores = ["Juan", "Carlos", "Pedro", "Nuevo"];
-  const personasAutorizadas = [
-    "Persona 1",
-    "Persona 2",
-    "Persona 3",
-    "Persona 4",
-  ];
+function Factura() {
+  const [datos, setDatos] = useState({
+    chofer: "",
+    fecha: "",
+    carga: "",
+    toneladas: "",
+    precioTonelada: "",
+    origen: "",
+    destino: "",
+    viaticos: "",
+    entregadoPor: "",
+    casetas: [],
+    gastosInesperados: [],
+  });
 
-  const [conductor, setConductor] = useState("");
-  const [fechaInicio, setFechaInicio] = useState(new Date());
-  const [origen, setOrigen] = useState("");
-  const [destino, setDestino] = useState("");
-  const [carga, setCarga] = useState("");
-  const [kilos, setKilos] = useState(0);
-  const [precioTonelada, setPrecioTonelada] = useState(0);
-  const [dineroGastos, setDineroGastos] = useState(0);
-  const [entregadorGastos, setEntregadorGastos] = useState("");
-  const [casetas, setCasetas] = useState([{ nombre: "", total: 0 }]);
-  const [gastosNoContemplados, setGastosNoContemplados] = useState([
-    { concepto: "", monto: 0 },
-  ]);
-  // Cargar datos guardados al montar el componente
-  useEffect(() => {
-    const savedData = localStorage.getItem("facturaData");
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setConductor(parsedData.conductor);
-      setFechaInicio(new Date(parsedData.fechaInicio));
-      setOrigen(parsedData.origen);
-      setDestino(parsedData.destino);
-      setCarga(parsedData.carga);
-      setKilos(parsedData.kilos);
-      setPrecioTonelada(parsedData.precioTonelada);
-      setDineroGastos(parsedData.dineroGastos);
-      setEntregadorGastos(parsedData.entregadorGastos);
-      setCasetas(parsedData.casetas);
-      setGastosNoContemplados(parsedData.gastosNoContemplados);
-    }
-  }, []);
-  // Guardar datos en localStorage cuando cambien
-  useEffect(() => {
-    const facturaData = {
-      conductor,
-      fechaInicio,
-      origen,
-      destino,
-      carga,
-      kilos,
-      precioTonelada,
-      dineroGastos,
-      entregadorGastos,
-      casetas,
-      gastosNoContemplados,
-    };
-    localStorage.setItem("facturaData", JSON.stringify(facturaData));
-  }, [
-    conductor,
-    fechaInicio,
-    origen,
-    destino,
-    carga,
-    kilos,
-    precioTonelada,
-    dineroGastos,
-    entregadorGastos,
-    casetas,
-    gastosNoContemplados,
-  ]);
-  const limpiarFormulario = () => {
-    if (window.confirm("¿Seguro que quieres limpiar el formulario?")) {
-      localStorage.removeItem("facturaData");
-      setConductor("");
-      setFechaInicio(new Date());
-      setOrigen("");
-      setDestino("");
-      setCarga("");
-      setKilos(0);
-      setPrecioTonelada(0);
-      setDineroGastos(0);
-      setEntregadorGastos("");
-      setCasetas([{ nombre: "", total: 0 }]);
-      setGastosNoContemplados([{ concepto: "", monto: 0 }]);
-    }
-  };
-  const handleAddCaseta = () => {
-    setCasetas([...casetas, { nombre: "", total: 0 }]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setDatos({ ...datos, [name]: value });
   };
 
-  const handleRemoveCaseta = (index) => {
-    setCasetas(casetas.filter((_, i) => i !== index));
+  const agregarItem = (campo) => {
+    setDatos({
+      ...datos,
+      [campo]: [...datos[campo], {}],
+    });
   };
 
-  const handleAddGastoNoContemplado = () => {
-    setGastosNoContemplados([
-      ...gastosNoContemplados,
-      { concepto: "", monto: 0 },
-    ]);
+  const actualizarItem = (campo, i, name, value) => {
+    const items = [...datos[campo]];
+    items[i] = { ...items[i], [name]: value };
+    setDatos({ ...datos, [campo]: items });
   };
 
-  const handleRemoveGastoNoContemplado = (index) => {
-    setGastosNoContemplados(gastosNoContemplados.filter((_, i) => i !== index));
+  const eliminarItem = (campo, i) => {
+    const items = [...datos[campo]];
+    items.splice(i, 1);
+    setDatos({ ...datos, [campo]: items });
   };
 
-  const generarPDF = () => {
+  const totalCasetas = datos.casetas.reduce(
+    (acc, c) => acc + Number(c.monto || 0),
+    0
+  );
+  const totalInesperados = datos.gastosInesperados.reduce(
+    (acc, g) => acc + Number(g.monto || 0),
+    0
+  );
+  const totalGastos = totalCasetas + totalInesperados;
+  const totalCarga =
+    Number(datos.toneladas || 0) * Number(datos.precioTonelada || 0);
+  const diferencia = Number(datos.viaticos || 0) - totalGastos;
+
+  const generarPDF = async () => {
     const doc = new jsPDF();
+    const margin = 20;
+    let y = margin;
 
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0, 64, 128);
+    // Cargar imagen del logotipo
+    const img = new Image();
+    img.src = logofactura;
+    await new Promise((resolve) => (img.onload = resolve));
+
+    // Logo superior
+    doc.addImage(img, "PNG", margin, y, 30, 20);
     doc.setFontSize(18);
-    doc.text("Factura de Gasto de Viaje", 20, 15);
+    doc.setTextColor(40, 40, 40);
+    doc.text("Factura de Viaje", 105, y + 10, null, null, "center");
+    y += 25;
 
+    // Sección: Datos del viaje
+    doc.setFillColor(230, 230, 230); // gris claro
+    doc.rect(margin, y, 170, 8, "F");
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(13);
+    doc.text("Datos del viaje", margin + 2, y + 6);
+    y += 12;
+
+    doc.setFontSize(11);
+    doc.text(`Chofer: ${datos.chofer}`, margin, y);
+    doc.text(`Fecha: ${datos.fecha}`, 120, y);
+    y += 7;
+    doc.text(`Carga: ${datos.carga}`, margin, y);
+    doc.text(`Toneladas: ${datos.toneladas}`, 120, y);
+    y += 7;
+    doc.text(`Precio por tonelada: $${datos.precioTonelada}`, margin, y);
+    y += 7;
+    doc.text(`Origen: ${datos.origen}`, margin, y);
+    doc.text(`Destino: ${datos.destino}`, 120, y);
+    y += 7;
+    doc.text(`Viáticos entregados: $${datos.viaticos}`, margin, y);
+    doc.text(`Entregado por: ${datos.entregadoPor}`, 120, y);
+    y += 10;
+
+    // Sección: Casetas
+    if (datos.casetas.length > 0) {
+      doc.setFillColor(230, 230, 230);
+      doc.rect(margin, y, 170, 8, "F");
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(13);
+      doc.text("Gastos de Casetas", margin + 2, y + 6);
+      y += 10;
+
+      doc.setFontSize(11);
+      datos.casetas.forEach((caseta, i) => {
+        doc.text(
+          `${i + 1}. ${caseta.nombre || "Sin nombre"} - $${caseta.monto}`,
+          margin + 5,
+          y
+        );
+        y += 6;
+      });
+      y += 2;
+    }
+
+    // Sección: Inesperados
+    if (datos.gastosInesperados.length > 0) {
+      doc.setFillColor(230, 230, 230);
+      doc.rect(margin, y, 170, 8, "F");
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(13);
+      doc.text("Gastos Inesperados", margin + 2, y + 6);
+      y += 10;
+
+      doc.setFontSize(11);
+      datos.gastosInesperados.forEach((gasto, i) => {
+        doc.text(
+          `${i + 1}. ${gasto.concepto || "Sin concepto"} - $${gasto.monto}`,
+          margin + 5,
+          y
+        );
+        y += 6;
+      });
+      y += 2;
+    }
+
+    // Resumen
+    doc.setFillColor(230, 230, 230);
+    doc.rect(margin, y, 170, 8, "F");
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(13);
+    doc.text("Resumen", margin + 2, y + 6);
+    y += 10;
+    doc.setTextColor(0, 120, 0);
+    doc.text(`Total Carga: $${totalCarga}`, margin + 5, y);
+    y += 6;
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Total Casetas: $${totalCasetas}`, margin + 5, y);
+    y += 6;
+    doc.text(`Total Inesperados: $${totalInesperados}`, margin + 5, y);
+    y += 6;
+
+    doc.setTextColor(0, 0, 180);
+    doc.text(`Total Gastos: $${totalGastos}`, margin + 5, y);
+    y += 6;
+
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Diferencia con viáticos: $${diferencia}`, margin + 5, y);
+    y += 10;
+
+    // Resultado final
     doc.setFontSize(12);
-    doc.setTextColor(51, 51, 51);
-    doc.setFont("helvetica", "normal");
+    if (diferencia < 0) {
+      doc.setTextColor(200, 0, 0);
+      doc.text(`A favor del chofer: $${Math.abs(diferencia)}`, margin + 5, y);
+    } else {
+      doc.setTextColor(0, 150, 0);
+      doc.text(`A favor de Vega Transportes: $${diferencia}`, margin + 5, y);
+    }
 
-    doc.text(`Conductor: ${conductor}`, 20, 30);
-    doc.text(`Fecha de Inicio: ${fechaInicio.toLocaleDateString()}`, 20, 40);
-    doc.text(`Origen: ${origen}`, 20, 50);
-    doc.text(`Destino: ${destino}`, 20, 60);
-
-    doc.setTextColor(0, 102, 204);
-    doc.setFontSize(14);
-    doc.text("Casetas:", 20, 75);
-
-    doc.setFontSize(12);
-    doc.setTextColor(51, 51, 51);
-    let yPosition = 85;
-
-    casetas.forEach((caseta, index) => {
-      doc.text(
-        `${index + 1}. ${caseta.nombre} - $${caseta.total}`,
-        25,
-        yPosition
-      );
-      yPosition += 8;
-    });
-    doc.setTextColor(0, 102, 204);
-    doc.setFontSize(14);
-    doc.text("Gastos No Contemplados:", 20, yPosition + 10);
-
-    doc.setFontSize(12);
-    doc.setTextColor(51, 51, 51);
-    yPosition += 20;
-
-    gastosNoContemplados.forEach((gasto, index) => {
-      doc.text(
-        `${index + 1}. ${gasto.concepto} - $${gasto.monto}`,
-        25,
-        yPosition
-      );
-      yPosition += 8;
-    });
-
-    const totalCasetas = casetas.reduce((sum, caseta) => sum + caseta.total, 0);
-    const totalGastosNoContemplados = gastosNoContemplados.reduce(
-      (sum, gasto) => sum + gasto.monto,
-      0
-    );
-    const total = totalCasetas + totalGastosNoContemplados;
-
-    doc.setTextColor(217, 83, 79);
-    doc.setFontSize(14);
+    // Pie de página con logo y texto
+    doc.setDrawColor(200);
+    doc.line(margin, 280, 210 - margin, 280);
+    doc.addImage(img, "PNG", margin, 282, 15, 10);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
     doc.text(
-      `Total: $${totalCasetas + totalGastosNoContemplados}`,
-      140,
-      yPosition + 15
+      "Gracias por confiar en Vega Transportes",
+      105,
+      288,
+      null,
+      null,
+      "center"
     );
 
-    doc.save("Factura_Gasto_Viaje.pdf");
+    doc.save("factura.pdf");
+  };
+
+  const limpiarFormulario = () => {
+    if (window.confirm("¿Estás seguro de que deseas limpiar el formulario?")) {
+      setDatos({
+        chofer: "",
+        fecha: "",
+        carga: "",
+        toneladas: "",
+        precioTonelada: "",
+        origen: "",
+        destino: "",
+        viaticos: "",
+        entregadoPor: "",
+        casetas: [],
+        gastosInesperados: [],
+      });
+    }
   };
 
   return (
-    <div className="factura-container">
-      <h1>Factura de Gasto por Viaje</h1>
+    <div className="factura-container" id="factura">
+      <div className="logofactura">
+        <nav>
+          <Link to="/">
+            <img
+              src={logofactura}
+              alt="Mi Logo"
+              style={{ cursor: "pointer" }}
+            />
+          </Link>
+        </nav>
+      </div>
 
-      <div className="factura-input">
-        <label>Conductor: </label>
-        <select
-          value={conductor}
-          onChange={(e) => setConductor(e.target.value)}
-        >
-          {conductores.map((c, index) => (
-            <option key={index} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-
-        {conductor === "Nuevo" && (
-          <input
-            type="text"
-            placeholder="Escribe el nombre del conductor"
-            value={conductor} // Vinculado al estado 'conductor'
-            onChange={(e) => setConductor(e.target.value)}
+      <div className="formulario">
+        <div className="grid-2">
+          <Input
+            label="Chofer"
+            name="chofer"
+            value={datos.chofer}
+            onChange={handleChange}
           />
-        )}
-      </div>
-
-      <div className="factura-input">
-        <label>Fecha de Inicio:</label>
-        <DatePicker
-          selected={fechaInicio}
-          onChange={(date) => setFechaInicio(date)}
+          <Input
+            label="Fecha"
+            name="fecha"
+            type="date"
+            value={datos.fecha}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="grid-2">
+          <Input
+            label="Carga"
+            name="carga"
+            value={datos.carga}
+            onChange={handleChange}
+          />
+          <Input
+            label="Toneladas"
+            name="toneladas"
+            type="number"
+            value={datos.toneladas}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="grid-2">
+          <Input
+            label="Precio por tonelada"
+            name="precioTonelada"
+            type="number"
+            value={datos.precioTonelada}
+            onChange={handleChange}
+          />
+          <Input
+            label="Origen"
+            name="origen"
+            value={datos.origen}
+            onChange={handleChange}
+          />
+        </div>
+        <Input
+          label="Destino"
+          name="destino"
+          value={datos.destino}
+          onChange={handleChange}
         />
-      </div>
+        <div className="grid-2">
+          <Input
+            label="Viáticos entregados"
+            name="viaticos"
+            type="number"
+            value={datos.viaticos}
+            onChange={handleChange}
+          />
+          <Input
+            label="Entregado por"
+            name="entregadoPor"
+            value={datos.entregadoPor}
+            onChange={handleChange}
+          />
+        </div>
 
-      <div className="factura-input">
-        <label>Lugar de Origen:</label>
-        <input
-          type="text"
-          value={origen} // Vinculado al estado 'origen'
-          onChange={(e) => setOrigen(e.target.value)}
+        {/* Casetas */}
+        <FieldList
+          label="Gastos de casetas"
+          items={datos.casetas}
+          onAdd={() => agregarItem("casetas")}
+          onUpdate={(i, campo, valor) =>
+            actualizarItem("casetas", i, campo, valor)
+          }
+          onDelete={(i) => eliminarItem("casetas", i)}
+          fields={[
+            { name: "nombre", placeholder: "Nombre" },
+            { name: "monto", type: "number", placeholder: "Monto" },
+          ]}
         />
-      </div>
-      <div className="factura-input">
-        <label>Lugar de Destino:</label>
-        <input
-          type="text"
-          value={destino} // Vinculado al estado 'destino'
-          onChange={(e) => setDestino(e.target.value)}
+
+        {/* Gastos Inesperados */}
+        <FieldList
+          label="Gastos inesperados"
+          items={datos.gastosInesperados}
+          onAdd={() => agregarItem("gastosInesperados")}
+          onUpdate={(i, campo, valor) =>
+            actualizarItem("gastosInesperados", i, campo, valor)
+          }
+          onDelete={(i) => eliminarItem("gastosInesperados", i)}
+          fields={[
+            { name: "concepto", placeholder: "Concepto" },
+            { name: "monto", type: "number", placeholder: "Monto" },
+          ]}
         />
-      </div>
-      {/* aki */}
-      <div className="factura-input">
-        <label>Carga:</label>
-        <input
-          type="text"
-          value={carga}
-          onChange={(e) => setCarga(e.target.value)}
-        />
-      </div>
-      <div className="factura-input">
-        <label>Kilos:</label>
-        <input
-          type="number"
-          value={kilos}
-          onChange={(e) => setKilos(e.target.value)}
-        />
-      </div>
 
-      <div className="factura-input">
-        <label>Precio por Tonelada:</label>
-        <input
-          type="number"
-          value={precioTonelada}
-          onChange={(e) => setPrecioTonelada(e.target.value)}
-        />
-      </div>
-
-      <div className="factura-input">
-        <label>Dinero para Gastos:</label>
-        <input
-          type="number"
-          value={dineroGastos}
-          onChange={(e) => setDineroGastos(e.target.value)}
-        />
-      </div>
-
-      <div className="factura-input">
-        <label>Entregador de Gastos:</label>
-        <select
-          value={entregadorGastos}
-          onChange={(e) => setEntregadorGastos(e.target.value)}
-        >
-          {personasAutorizadas.map((persona, index) => (
-            <option key={index} value={persona}>
-              {persona}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="factura-section">
-        <h3>Casetas</h3>
-        {casetas.map((caseta, index) => (
-          <div key={index} className="factura-input">
-            <input
-              type="text"
-              placeholder="Nombre de Caseta"
-              value={caseta.nombre}
-              onChange={(e) => {
-                const newCasetas = [...casetas];
-                newCasetas[index].nombre = e.target.value;
-                setCasetas(newCasetas);
-              }}
-            />
-            <input
-              type="number"
-              placeholder="Total"
-              value={caseta.total}
-              onChange={(e) => {
-                const newCasetas = [...casetas];
-                newCasetas[index].total = parseFloat(e.target.value);
-                setCasetas(newCasetas);
-              }}
-            />
-            <button onClick={() => handleRemoveCaseta(index)}>Eliminar</button>
-          </div>
-        ))}
-        <button onClick={handleAddCaseta}>Agregar Caseta</button>
-      </div>
-
-      <div className="factura-section">
-        <h3>Gastos No Contemplados</h3>
-        {gastosNoContemplados.map((gasto, index) => (
-          <div key={index} className="factura-input">
-            <input
-              type="text"
-              placeholder="Concepto"
-              value={gasto.concepto}
-              onChange={(e) => {
-                const newGastos = [...gastosNoContemplados];
-                newGastos[index].concepto = e.target.value;
-                setGastosNoContemplados(newGastos);
-              }}
-            />
-            <input
-              type="number"
-              placeholder="Monto"
-              value={gasto.monto}
-              onChange={(e) => {
-                const newGastos = [...gastosNoContemplados];
-                newGastos[index].monto = parseFloat(e.target.value);
-                setGastosNoContemplados(newGastos);
-              }}
-            />
-            <button onClick={() => handleRemoveGastoNoContemplado(index)}>
-              Eliminar
-            </button>
-          </div>
-        ))}
-        <button onClick={handleAddGastoNoContemplado}>
-          Agregar Gasto No Contemplado
-        </button>
-      </div>
-
-      <div className="buttons">
-        <button onClick={generarPDF}>Generar PDF</button>
-        <button onClick={limpiarFormulario}>Limpiar Formulario</button>
+        <div className="factura-botones">
+          <button onClick={generarPDF} className="btn btn-green">
+            Generar PDF
+          </button>
+          <button onClick={limpiarFormulario} className="btn btn-red">
+            Limpiar
+          </button>
+        </div>
       </div>
     </div>
   );
-};
+}
+
+// Subcomponentes
+const Input = ({ label, name, value, onChange, type = "text" }) => (
+  <div>
+    <label>{label}</label>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      className="input-text"
+    />
+  </div>
+);
+
+const FieldList = ({ label, items, onAdd, onUpdate, onDelete, fields }) => (
+  <div className="mb-4">
+    <label>{label}</label>
+    {items.map((item, i) => (
+      <div key={i} className="grid-3">
+        {fields.map((f, idx) => (
+          <input
+            key={idx}
+            type={f.type || "text"}
+            placeholder={f.placeholder}
+            value={item[f.name]}
+            onChange={(e) => onUpdate(i, f.name, e.target.value)}
+            className="input-text"
+          />
+        ))}
+        <button onClick={() => onDelete(i)} className="btn btn-red">
+          X
+        </button>
+      </div>
+    ))}
+    <button onClick={onAdd} className="btn btn-green">
+      Agregar
+    </button>
+  </div>
+);
 
 export default Factura;
